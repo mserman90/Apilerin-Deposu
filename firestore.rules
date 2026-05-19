@@ -45,5 +45,17 @@ service cloud.firestore {
                     && incoming().updatedAt == request.time
                     && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'updatedAt']);
     }
+
+    match /feedbacks/{feedbackId} {
+      allow read: if true;
+      allow create: if incoming().keys().hasAll(['apiId', 'rating', 'createdAt'])
+                    && incoming().apiId is string
+                    && incoming().rating is number
+                    && incoming().rating >= 1 && incoming().rating <= 5
+                    && (!('comment' in incoming()) || incoming().comment is string)
+                    && (!('userName' in incoming()) || incoming().userName is string)
+                    && incoming().createdAt is timestamp;
+      allow update, delete: if false;
+    }
   }
 }

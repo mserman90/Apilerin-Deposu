@@ -14,6 +14,8 @@ import {
   RefreshCw
 } from 'lucide-react';
 
+import ApiDetailModal from './components/ApiDetailModal';
+
 // --- AĞ (NETWORK) VE KOTA YÖNETİMİ KATMANI ---
 
 /**
@@ -203,6 +205,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedAuth, setSelectedAuth] = useState('All');
   const [selectedFreeTier, setSelectedFreeTier] = useState('All');
+  const [selectedApi, setSelectedApi] = useState<any | null>(null);
 
   const loadData = async () => {
     try {
@@ -482,27 +485,23 @@ export default function App() {
                   
                   <div className="flex gap-3">
                     {api.source !== 'github' && (
-                      <>
-                        <a 
-                          href={`https://apideposu.com/en/playground?api=${api.id}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
-                          title="Playground'da Test Et"
-                        >
-                          <Play className="w-4 h-4" /> Test Et
-                        </a>
-                        <a 
-                          href={`https://apideposu.com/en/catalog/${api.id}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium flex items-center gap-1 transition-colors"
-                          title="Detay Sayfası"
-                        >
-                          <ExternalLink className="w-4 h-4" /> Detay
-                        </a>
-                      </>
+                      <a 
+                        href={`https://apideposu.com/en/playground?api=${api.id}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
+                        title="Playground'da Test Et"
+                      >
+                        <Play className="w-4 h-4" /> Test Et
+                      </a>
                     )}
+                    <button 
+                      onClick={() => setSelectedApi(api)}
+                      className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium flex items-center gap-1 transition-colors"
+                      title="Detay ve Yorumlar"
+                    >
+                      <ExternalLink className="w-4 h-4" /> Detay
+                    </button>
                   </div>
                 </div>
               </div>
@@ -519,6 +518,15 @@ export default function App() {
         )}
       </main>
 
+      {selectedApi && (
+        <ApiDetailModal 
+          api={selectedApi} 
+          onClose={() => setSelectedApi(null)} 
+          formatCategory={formatCategory}
+          formatFreeTier={formatFreeTier}
+          getAuthBadgeColor={getAuthBadgeColor}
+        />
+      )}
     </div>
   );
 }
