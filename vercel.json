@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/proxy/catalog/:path*",
+      "destination": "https://api.apideposu.com/catalog/:path*"
+    }
+  ]
+}

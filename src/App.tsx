@@ -90,25 +90,35 @@ const fetchWithBackoff = async (url: string, options: RequestInit = {}, retries 
 const fetchApis = async (): Promise<any[]> => {
   const targetUrl = 'https://api.apideposu.com/catalog/apis?limit=500';
   
-  // CORS engellerine karşı kullanılacak güvenilir proxy servisleri (Fallbacks)
-  const proxyList = [
-    '', // Öncelikle doğrudan istek atmayı dene
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?'
+  // Stratejiler
+  const fetchStrategies = [
+    { type: 'direct', url: targetUrl },
+    { type: 'vercel-proxy', url: '/proxy/catalog/apis?limit=500' },
+    { type: 'allorigins-get', url: `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}` },
+    { type: 'codetabs-proxy', url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}` },
+    { type: 'thingproxy', url: `https://thingproxy.freeboard.io/fetch/${targetUrl}` }
   ];
 
   let lastError: any = null;
 
-  for (const proxy of proxyList) {
+  for (const strategy of fetchStrategies) {
     try {
-      const url = proxy ? `${proxy}${encodeURIComponent(targetUrl)}` : targetUrl;
-      console.log(`[Veri Çekimi] Deneniyor: ${proxy ? 'Proxy üzerinden' : 'Doğrudan'} -> ${url}`);
+      console.log(`[Veri Çekimi] Deneniyor: ${strategy.type} -> ${strategy.url}`);
       
-      const response = await fetchWithBackoff(url, {
+      const response = await fetchWithBackoff(strategy.url, {
         headers: { 'Accept': 'application/json' }
-      });
+      }, 2, 500);
       
       const data = await response.json();
+      
+      // allorigins.win/get sonucu parse edilmesi gerekir
+      if (strategy.type === 'allorigins-get') {
+         if (data.contents) {
+           const parsed = typeof data.contents === 'string' ? JSON.parse(data.contents) : data.contents;
+           if (Array.isArray(parsed)) return parsed;
+         }
+         throw new Error("AllOrigins verisi geçerli dizi formatında değil.");
+      }
       
       if (Array.isArray(data)) {
         return data;
@@ -116,12 +126,12 @@ const fetchApis = async (): Promise<any[]> => {
         throw new Error("API yanıtı beklenen dizi formatında değil.");
       }
     } catch (error: any) {
-      console.warn(`[Fetch Başarısız] Proxy: ${proxy || 'Direct'}, Hata: ${error.message}`);
+      console.warn(`[Fetch Başarısız] Strateji: ${strategy.type}, Hata: ${error.message}`);
       lastError = error;
     }
   }
 
-  throw new Error("Tüm fetch ve proxy denemeleri başarısız oldu: " + lastError?.message);
+  throw new Error("Tüm fetch stratejileri başarısız oldu: " + lastError?.message);
 };
 
 
