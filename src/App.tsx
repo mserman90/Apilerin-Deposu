@@ -141,6 +141,7 @@ export default function App() {
   const [apis, setApis] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedAuth, setSelectedAuth] = useState('All');
@@ -272,7 +273,7 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-xl font-bold leading-tight flex items-center gap-2">
-                API Deposu
+                API'lerin Deposu
                 <button 
                   onClick={loadData}
                   className="p-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-sm flex items-center shadow-sm transition-colors"
@@ -450,6 +451,7 @@ export default function App() {
           </div>
         )}
       </main>
+
     </div>
   );
 }
