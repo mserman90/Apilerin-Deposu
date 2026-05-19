@@ -17,9 +17,10 @@ interface ApiDetailModalProps {
   formatCategory: (cat: string) => string;
   formatFreeTier: (tier: string) => string;
   getAuthBadgeColor: (auth: string) => string;
+  getApiStatus: (api: any) => { label: string, color: string, dot: string, Icon: any };
 }
 
-export default function ApiDetailModal({ api, onClose, formatCategory, formatFreeTier, getAuthBadgeColor }: ApiDetailModalProps) {
+export default function ApiDetailModal({ api, onClose, formatCategory, formatFreeTier, getAuthBadgeColor, getApiStatus }: ApiDetailModalProps) {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(5);
@@ -27,6 +28,7 @@ export default function ApiDetailModal({ api, onClose, formatCategory, formatFre
   const [userName, setUserName] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // ... rest of state and effects
   useEffect(() => {
     fetchFeedbacks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,6 +85,8 @@ export default function ApiDetailModal({ api, onClose, formatCategory, formatFre
     ? (feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length).toFixed(1)
     : '0.0';
 
+  const status = getApiStatus(api);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl my-8 flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700">
@@ -95,7 +99,11 @@ export default function ApiDetailModal({ api, onClose, formatCategory, formatFre
               {api.official && <CheckCircle className="w-5 h-5 text-green-500" title="Resmi API" />}
             </h2>
             <div className="flex flex-wrap gap-2 mt-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300">
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium cursor-default ${status.color}`} title={`Durum: ${status.label}`}>
+                 <span className={`w-2 h-2 rounded-full ${status.dot}`}></span>
+                 {status.label}
+              </div>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300">
                 {formatCategory(api.category)}
               </span>
               <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium ${getAuthBadgeColor(api.auth)}`}>

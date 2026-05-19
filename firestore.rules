@@ -57,5 +57,21 @@ service cloud.firestore {
                     && incoming().createdAt is timestamp;
       allow update, delete: if false;
     }
+
+    match /submitted_apis/{apiId} {
+      allow read: if true;
+      allow create: if incoming().keys().hasAll(['name', 'description', 'createdAt'])
+                    && incoming().name is string
+                    && incoming().description is string
+                    && (!('url' in incoming()) || incoming().url is string)
+                    && (!('authType' in incoming()) || incoming().authType is string)
+                    && (!('pricingTier' in incoming()) || incoming().pricingTier is string)
+                    && (!('docsUrl' in incoming()) || incoming().docsUrl is string)
+                    && (!('status' in incoming()) || (incoming().status is string && incoming().status == 'pending'))
+                    && (!('submitterName' in incoming()) || incoming().submitterName is string)
+                    && (!('submitterEmail' in incoming()) || incoming().submitterEmail is string)
+                    && incoming().createdAt is timestamp;
+      allow update, delete: if false;
+    }
   }
 }
