@@ -10,7 +10,8 @@ import {
   BookOpen, 
   Play, 
   Filter,
-  Info
+  Info,
+  RefreshCw
 } from 'lucide-react';
 
 // --- AĞ (NETWORK) VE KOTA YÖNETİMİ KATMANI ---
@@ -135,36 +136,28 @@ export default function App() {
   const [selectedAuth, setSelectedAuth] = useState('All');
   const [selectedFreeTier, setSelectedFreeTier] = useState('All');
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const liveData = await fetchApis();
+      
+      // İsme göre alfabetik sırala (Orijinal projedeki gibi)
+      const sortedData = liveData.sort((a, b) => a.name.localeCompare(b.name, 'en'));
+      setApis(sortedData);
+    } catch (err) {
+      // Veri çekilemezse gösterilecek KESİN hata mesajı
+      setError("Veri çekilemedi. Yeniden denemek ister misiniz?"); 
+      console.error("[Uygulama Hatası] Veri yüklenemedi:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Veri yükleme efekti (Sıfır kurgusal veri ilkesi)
   useEffect(() => {
-    let isMounted = true;
-    
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const liveData = await fetchApis();
-        
-        if (isMounted) {
-          // İsme göre alfabetik sırala (Orijinal projedeki gibi)
-          const sortedData = liveData.sort((a, b) => a.name.localeCompare(b.name, 'en'));
-          setApis(sortedData);
-        }
-      } catch (err) {
-        if (isMounted) {
-          // Veri çekilemezse gösterilecek KESİN hata mesajı
-          setError("Veri mevcut değil"); 
-          console.error("[Uygulama Hatası] Veri yüklenemedi:", err);
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
     loadData();
-
-    return () => { isMounted = false; };
   }, []);
 
   // Kategorileri dinamik olarak çıkart
@@ -243,9 +236,16 @@ export default function App() {
         </div>
         {/* İstenen spesifik uyarı mesajı */}
         <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">{error}</h1>
-        <p className="text-slate-600 dark:text-slate-400 max-w-md">
+        <p className="text-slate-600 dark:text-slate-400 max-w-md mb-6">
           API Deposu sunucusuna ulaşılamadı veya canlı veriler çekilemedi. Lütfen daha sonra tekrar deneyin.
         </p>
+        <button 
+          onClick={loadData}
+          className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow transition-colors"
+        >
+          <RefreshCw className="w-5 h-5" />
+          Yeniden Dene
+        </button>
       </div>
     );
   }
@@ -261,7 +261,16 @@ export default function App() {
               <Database className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold leading-tight">API Deposu</h1>
+              <h1 className="text-xl font-bold leading-tight flex items-center gap-2">
+                API Deposu
+                <button 
+                  onClick={loadData}
+                  className="p-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-sm flex items-center shadow-sm transition-colors"
+                  title="Verileri Yenile"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide uppercase">Açık API Kataloğu Ön İzleme</p>
             </div>
           </div>
