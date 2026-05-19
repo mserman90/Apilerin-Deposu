@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Primitive Definition
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return request.auth.token.email_verified == true; }
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'createdAt'])
+             && data.uid is string && data.uid.size() <= 128 && data.uid == request.auth.uid
+             && (!('email' in data) || (data.email is string && data.email.size() <= 256))
+             && data.createdAt is timestamp
+             && (!('updatedAt' in data) || (data.updatedAt is timestamp));
+    }
+
+    match /users/{userId} {
+      // PII Protection: Only the owner can read
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      
+      allow create: if isSignedIn() 
+                    && isVerified()
+                    && isValidId(userId)
+                    && request.auth.uid == userId 
+                    && isValidUser(incoming())
+                    && incoming().keys().hasOnly(['uid', 'email', 'createdAt', 'updatedAt'])
+                    && incoming().createdAt == request.time;
+                    
+      allow update: if isSignedIn() 
+                    && isVerified()
+                    && isValidId(userId)
+                    && request.auth.uid == userId 
+                    && isValidUser(incoming())
+                    && incoming().uid == existing().uid
+                    && incoming().createdAt == existing().createdAt
+                    && incoming().updatedAt == request.time
+                    && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'updatedAt']);
+    }
+  }
+}

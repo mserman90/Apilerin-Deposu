@@ -132,6 +132,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedAuth, setSelectedAuth] = useState('All');
+  const [selectedFreeTier, setSelectedFreeTier] = useState('All');
 
   // Veri yükleme efekti (Sıfır kurgusal veri ilkesi)
   useEffect(() => {
@@ -171,6 +173,18 @@ export default function App() {
     return ['All', ...Array.from(cats).sort()];
   }, [apis]);
 
+  // Auth türlerini dinamik olarak çıkart
+  const authTypes = useMemo(() => {
+    const auths = new Set(apis.map(api => api.auth).filter(Boolean));
+    return ['All', ...Array.from(auths).sort()];
+  }, [apis]);
+
+  // Ücretlendirme türlerini dinamik olarak çıkart
+  const freeTiers = useMemo(() => {
+    const tiers = new Set(apis.map(api => api.freeTier).filter(Boolean));
+    return ['All', ...Array.from(tiers).sort()];
+  }, [apis]);
+
   // Arama ve filtreleme mantığı
   const filteredApis = useMemo(() => {
     return apis.filter(api => {
@@ -180,15 +194,27 @@ export default function App() {
         api.summary?.en?.toLowerCase().includes(searchTerm.toLowerCase());
         
       const matchesCategory = selectedCategory === 'All' || api.category === selectedCategory;
+      const matchesAuth = selectedAuth === 'All' || api.auth === selectedAuth;
+      const matchesFreeTier = selectedFreeTier === 'All' || api.freeTier === selectedFreeTier;
       
-      return matchesSearch && matchesCategory;
+      return matchesSearch && matchesCategory && matchesAuth && matchesFreeTier;
     });
-  }, [apis, searchTerm, selectedCategory]);
+  }, [apis, searchTerm, selectedCategory, selectedAuth, selectedFreeTier]);
 
   // Yardımcı formatlama fonksiyonları
   const formatCategory = (cat: string) => {
     if (!cat) return 'Diğer';
     return cat.charAt(0).toUpperCase() + cat.slice(1).replace('-', ' ');
+  };
+
+  const formatFreeTier = (tier: string) => {
+    if (!tier) return 'Bilinmiyor';
+    if (tier === 'free') return 'Ücretsiz';
+    if (tier === 'sandbox') return 'Sandbox';
+    if (tier === 'trial') return 'Deneme (Trial)';
+    if (tier === 'limited') return 'Sınırlı (Limited)';
+    if (tier === 'paid') return 'Ücretli';
+    return tier;
   };
 
   const getAuthBadgeColor = (auth: string) => {
@@ -261,25 +287,57 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* STATS & FILTERS */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-4">
           <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800 px-4 py-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <Info className="w-4 h-4 text-blue-500" />
             <span>Toplam <strong>{filteredApis.length}</strong> API listeleniyor</span>
           </div>
           
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <Filter className="w-4 h-4 text-slate-500 hidden md:block" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="block w-full md:w-48 pl-3 pr-10 py-2 text-base border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border"
-            >
-              {categories.map((cat: any) => (
-                <option key={cat} value={cat}>
-                  {cat === 'All' ? 'Tüm Kategoriler' : formatCategory(cat)}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Filter className="w-4 h-4 text-slate-500 hidden sm:block" />
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="block w-full sm:w-48 pl-3 pr-10 py-2 text-sm border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border"
+              >
+                {categories.map((cat: any) => (
+                  <option key={cat} value={cat}>
+                    {cat === 'All' ? 'Tüm Kategoriler' : formatCategory(cat)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Shield className="w-4 h-4 text-slate-500 hidden sm:block" />
+              <select
+                value={selectedAuth}
+                onChange={(e) => setSelectedAuth(e.target.value)}
+                className="block w-full sm:w-48 pl-3 pr-10 py-2 text-sm border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border"
+              >
+                {authTypes.map((auth: any) => (
+                  <option key={auth} value={auth}>
+                    {auth === 'All' ? 'Tüm Kimlik Doğrulama' : auth}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Globe className="w-4 h-4 text-slate-500 hidden sm:block" />
+              <select
+                value={selectedFreeTier}
+                onChange={(e) => setSelectedFreeTier(e.target.value)}
+                className="block w-full sm:w-48 pl-3 pr-10 py-2 text-sm border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border"
+              >
+                {freeTiers.map((tier: any) => (
+                  <option key={tier} value={tier}>
+                    {tier === 'All' ? 'Tüm Ücret Türleri' : formatFreeTier(tier)}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -317,11 +375,7 @@ export default function App() {
                     {/* Ücretlendirme Etiketi */}
                     <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200">
                       <Globe className="w-3 h-3" />
-                      {api.freeTier === 'free' ? 'Ücretsiz' : 
-                       api.freeTier === 'sandbox' ? 'Sandbox' : 
-                       api.freeTier === 'trial' ? 'Deneme (Trial)' : 
-                       api.freeTier === 'limited' ? 'Sınırlı (Limited)' : 
-                       api.freeTier === 'paid' ? 'Ücretli' : 'Bilinmiyor'}
+                      {formatFreeTier(api.freeTier)}
                     </div>
                   </div>
                 </div>
