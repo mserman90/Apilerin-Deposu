@@ -1,0 +1,6 @@
+{
+  "name": "API Deposu",
+  "description": "Açık API Kataloğu Ön İzleme. API'leri kolayca bulup inceleyin.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
