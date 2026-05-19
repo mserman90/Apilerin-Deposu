@@ -135,6 +135,63 @@ const fetchApis = async (): Promise<any[]> => {
 };
 
 
+const fetchGithubResources = async (): Promise<any[]> => {
+  try {
+    const response = await fetchWithBackoff('https://raw.githubusercontent.com/mserman90/free-dev-student-resources/main/README.md', {}, 2, 500);
+    const text = await response.text();
+    
+    const lines = text.split('\n');
+    const resources: any[] = [];
+    
+    let currentCategory = 'Genel';
+    
+    for (const line of lines) {
+      if (line.startsWith('## ')) {
+        currentCategory = line.substring(3).trim();
+      }
+      
+      if (line.trim().startsWith('|') && !line.includes('| Servis |') && !line.includes('|---|')) {
+        const parts = line.split('|').map(p => p.trim());
+        if (parts.length >= 4) {
+          const servis = parts[1];
+          const kateg = parts[2];
+          const desc = parts[3];
+          
+          const match = servis.match(/\[(.*?)\]\((.*?)\)/);
+          let name = servis;
+          let url = '';
+          
+          if (match) {
+            name = match[1];
+            url = match[2];
+          }
+          
+          name = name.replace(/🎓/g, '').replace(/⭐/g, '').trim();
+          if(!name) continue; // Skip empty
+          
+          const id = 'gh-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+          
+          resources.push({
+            id: id,
+            name: name,
+            category: kateg || currentCategory,
+            summary: { tr: desc },
+            auth: 'Bilinmiyor',
+            freeTier: servis.includes('🎓') ? 'student' : 'free',
+            docsUrl: url,
+            official: false,
+            source: 'github'
+          });
+        }
+      }
+    }
+    return resources;
+  } catch (err) {
+    console.error("Github resources parse error:", err);
+    return [];
+  }
+};
+
 // --- UI BİLEŞENLERİ ---
 
 export default function App() {
@@ -153,13 +210,18 @@ export default function App() {
       setError(null);
       
       const liveData = await fetchApis();
+      const githubData = await fetchGithubResources();
       
-      // İsme göre alfabetik sırala (Orijinal projedeki gibi)
-      const sortedData = liveData.sort((a, b) => a.name.localeCompare(b.name, 'en'));
+      const allData = [...liveData, ...githubData];
+      
+      // İsme göre alfabetik sırala
+      const sortedData = allData.sort((a, b) => a.name.localeCompare(b.name, 'en'));
       setApis(sortedData);
     } catch (err) {
       // Veri çekilemezse gösterilecek KESİN hata mesajı
-      setError("Veri çekilemedi. Yeniden denemek ister misiniz?"); 
+      if (apis.length === 0) {
+        setError("Veri çekilemedi. Yeniden denemek ister misiniz?"); 
+      }
       console.error("[Uygulama Hatası] Veri yüklenemedi:", err);
     } finally {
       setLoading(false);
@@ -214,6 +276,7 @@ export default function App() {
   const formatFreeTier = (tier: string) => {
     if (!tier) return 'Bilinmiyor';
     if (tier === 'free') return 'Ücretsiz';
+    if (tier === 'student') return 'Öğrenci (Student)';
     if (tier === 'sandbox') return 'Sandbox';
     if (tier === 'trial') return 'Deneme (Trial)';
     if (tier === 'limited') return 'Sınırlı (Limited)';
@@ -418,24 +481,28 @@ export default function App() {
                   )}
                   
                   <div className="flex gap-3">
-                    <a 
-                      href={`https://apideposu.com/en/playground?api=${api.id}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
-                      title="Playground'da Test Et"
-                    >
-                      <Play className="w-4 h-4" /> Test Et
-                    </a>
-                    <a 
-                      href={`https://apideposu.com/en/catalog/${api.id}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium flex items-center gap-1 transition-colors"
-                      title="Detay Sayfası"
-                    >
-                      <ExternalLink className="w-4 h-4" /> Detay
-                    </a>
+                    {api.source !== 'github' && (
+                      <>
+                        <a 
+                          href={`https://apideposu.com/en/playground?api=${api.id}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
+                          title="Playground'da Test Et"
+                        >
+                          <Play className="w-4 h-4" /> Test Et
+                        </a>
+                        <a 
+                          href={`https://apideposu.com/en/catalog/${api.id}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium flex items-center gap-1 transition-colors"
+                          title="Detay Sayfası"
+                        >
+                          <ExternalLink className="w-4 h-4" /> Detay
+                        </a>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
